@@ -1,0 +1,18 @@
+{
+  "name": "markdown-writer",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "watch": "tsc --watch"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "@types/yargs": "^17.0.33",
+    "typescript": "^5.6.3"
+  },
+  "dependencies": {
+    "csv": "^6.3.10",
+    "yargs": "^17.7.2"
+  }
+}
