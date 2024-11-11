@@ -1,3 +1,19 @@
 node_modules
 dist
 data
+
+# Virtual environment
+venv/
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# pip files
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Other Python environment files
+.python-version

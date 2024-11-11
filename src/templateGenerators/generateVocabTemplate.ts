@@ -1,5 +1,5 @@
-import { PartsOfSpeech } from "./constants"
-import { capitalize } from './helpers'
+import { partOfSpeechMap } from "../constants"
+import { capitalize, generateTimestamp } from '../helpers'
 
 export interface GenerateVocabTemplateArgs {
   partOfSpeech: string
@@ -12,26 +12,14 @@ export interface GenerateVocabTemplateArgs {
   plural?: string
 }
 
-function generateTimestamp(): string {
-  const now = new Date();
-
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are 0-based
-  const day = String(now.getDate()).padStart(2, '0');
-  const hours = String(now.getHours()).padStart(2, '0');
-  const minutes = String(now.getMinutes()).padStart(2, '0');
-
-  return `${year}-${month}-${day} ${hours}:${minutes}`;
-}
-
 function generateTags(word: string, partOfSpeech: string) {
   let template = `
 tags:
   - vocabulary
-  - ${partOfSpeech}  
+  - ${partOfSpeech.toLowerCase()}  
 `.trim()
 
-  if (partOfSpeech === PartsOfSpeech.VERB) {
+  if (partOfSpeech === partOfSpeechMap['VERB']) {
     template = template + `
   - ${word.slice(word.length - 2, word.length)}
   `
@@ -53,7 +41,7 @@ export default function generateVocabTemplate({
   return `
 ---
 createdAt: ${generateTimestamp()}
-type: ${partOfSpeech}
+type: ${partOfSpeech.toLowerCase()}
 ${generateTags(word, partOfSpeech)}
 ---
 

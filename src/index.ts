@@ -2,8 +2,10 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
 import { join } from 'path'
 import { argv } from './arguments'
 import { parse as csvParse } from 'csv'
-import generateVocabTemplate from './generateVocabTemplate'
 import { capitalize } from './helpers'
+import { generateVocabTemplate } from './templateGenerators'
+import analyzeText from './analyzeText'
+import { partOfSpeechMap } from './constants'
 
 interface VocabRow {
   english: string 
@@ -15,7 +17,7 @@ interface VocabRow {
   plural: string
 }
 
-async function readInputFile(): Promise<VocabRow[]> {
+async function readVocabInputFile(): Promise<VocabRow[]> {
   return new Promise((resolve, reject) => {
     const headers = ['english','portuguese','pronunciation','notes','context','synonym','plural']
     const inputFilePath = argv.inputFilePath
@@ -32,14 +34,17 @@ async function readInputFile(): Promise<VocabRow[]> {
   })
 }
 
-function generateMarkdownFiles(rows: VocabRow[]) {
+async function generateMarkdownFiles(rows: VocabRow[]) {
   try {
-    const partOfSpeech = argv.partOfSpeech
-    const outputDirPath = join(__dirname, '..', 'data', 'output', `${partOfSpeech}s`)
-    if (!existsSync(outputDirPath)) mkdirSync(outputDirPath, { recursive: true})
-
     for (const row of rows) {
       const { portuguese, english, pronunciation, notes, context, synonym, plural } = row
+      const analyzedText = await analyzeText(portuguese)
+      const pos = partOfSpeechMap[analyzedText[0].pos]
+      const outputDirPath = join(__dirname, '..', 'data', 'output', `${pos}s`)
+
+      if (!existsSync(outputDirPath)) mkdirSync(outputDirPath, { recursive: true})
+
+      console.log(analyzedText)
       const word = capitalize(portuguese)
       const outputFilePath = join(outputDirPath, `${word}.md`)
       const markdownString = generateVocabTemplate({
@@ -50,8 +55,9 @@ function generateMarkdownFiles(rows: VocabRow[]) {
         synonym,
         plural,
         translation: english,
-        partOfSpeech: partOfSpeech,
+        partOfSpeech: pos,
       })
+
       writeFileSync(outputFilePath, markdownString)
     }
   } catch (err) {
@@ -62,7 +68,8 @@ function generateMarkdownFiles(rows: VocabRow[]) {
 }
 
 async function run() {
-  const content = await readInputFile()
+  const partOfSpeech = argv.partOfSpeech
+  const content = await readVocabInputFile()
   generateMarkdownFiles(content)
 }
 
