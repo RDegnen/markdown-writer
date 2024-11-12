@@ -4,14 +4,12 @@ export interface GenerateExpressionTemplateArgs {
   expression: string
   translation: string
   notes?: string
-  examples?: string
 }
 
 export default function generateExpressionTemplate({
   expression,
   translation,
-  notes,
-  examples
+  notes
 }: GenerateExpressionTemplateArgs) {
   return `
 ---
@@ -23,9 +21,6 @@ tags:
 
 # ${expression}
 **Meaning**:: ${translation}
-### Examples
-${examples || ''}
-
 ### Notes
 ${notes || ''}
 `.trim()

@@ -18,3 +18,8 @@ export const partOfSpeechMap: { [key: string]: string } = {
   X: "Other / Unknown",
   SPACE: "Space"
 };
+
+export enum InputFileTypes {
+  EXPRESSIONS = 'expressions',
+  VOCAB = 'vocab'
+}

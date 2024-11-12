@@ -3,9 +3,9 @@ import { join } from 'path'
 import { argv } from './arguments'
 import { parse as csvParse } from 'csv'
 import { capitalize } from './helpers'
-import { generateVocabTemplate } from './templateGenerators'
+import { generateExpressionTemplate, generateVocabTemplate } from './templateGenerators'
 import analyzeText from './analyzeText'
-import { partOfSpeechMap } from './constants'
+import { InputFileTypes, partOfSpeechMap } from './constants'
 
 interface VocabRow {
   english: string 
@@ -17,9 +17,14 @@ interface VocabRow {
   plural: string
 }
 
-async function readVocabInputFile(): Promise<VocabRow[]> {
+interface ExpressionRow {
+  english: string
+  portuguese: string
+  notes: string
+}
+
+async function readInputFile<RT>(headers: string[]): Promise<RT[]> {
   return new Promise((resolve, reject) => {
-    const headers = ['english','portuguese','pronunciation','notes','context','synonym','plural']
     const inputFilePath = argv.inputFilePath
     const fileContent = readFileSync(inputFilePath)
   
@@ -27,14 +32,14 @@ async function readVocabInputFile(): Promise<VocabRow[]> {
       delimiter: ',',
       columns: headers,
       from_line: 2
-    }, (error, result: VocabRow[]) => {
+    }, (error, result: RT[]) => {
       if (error) return reject(error)
       return resolve(result)
     })
   })
 }
 
-async function generateMarkdownFiles(rows: VocabRow[]) {
+async function generateVocabMarkdownFiles(rows: VocabRow[]) {
   try {
     for (const row of rows) {
       const { portuguese, english, pronunciation, notes, context, synonym, plural } = row
@@ -44,7 +49,6 @@ async function generateMarkdownFiles(rows: VocabRow[]) {
 
       if (!existsSync(outputDirPath)) mkdirSync(outputDirPath, { recursive: true})
 
-      console.log(analyzedText)
       const word = capitalize(portuguese)
       const outputFilePath = join(outputDirPath, `${word}.md`)
       const markdownString = generateVocabTemplate({
@@ -67,10 +71,44 @@ async function generateMarkdownFiles(rows: VocabRow[]) {
   }
 }
 
+function generateExpressionMarkdownFiles(rows: ExpressionRow[]) {
+  try {
+    const outputDirPath = join(__dirname, '..', 'data', 'output', InputFileTypes.EXPRESSIONS)
+    if (!existsSync(outputDirPath)) mkdirSync(outputDirPath, { recursive: true})
+
+    for (const row of rows) {
+      const { english, portuguese, notes } = row
+      const expression = capitalize(portuguese)
+      const outputFilePath = join(outputDirPath, `${expression}.md`)
+      const markdownString = generateExpressionTemplate({
+        notes,
+        expression,
+        translation: english
+      })
+
+      writeFileSync(outputFilePath, markdownString)
+    }
+  } catch (err) {
+    console.error(err)
+  } finally {
+    console.log('finished writing markdown files')
+  }
+}
+
 async function run() {
-  const partOfSpeech = argv.partOfSpeech
-  const content = await readVocabInputFile()
-  generateMarkdownFiles(content)
+  switch (argv.inputFileType) {
+    case InputFileTypes.VOCAB: {
+      const content = await readInputFile<VocabRow>(['english','portuguese','pronunciation','notes','context','synonym','plural'])
+      generateVocabMarkdownFiles(content)
+    }
+    case InputFileTypes.EXPRESSIONS: {
+      const content = await readInputFile<ExpressionRow>(['english', 'portuguese', 'notes'])
+      generateExpressionMarkdownFiles(content)
+    }
+    default: {
+      console.log('Please enter a valid input file type')
+    }
+  }
 }
 
 run()
